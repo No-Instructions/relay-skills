@@ -1,5 +1,6 @@
 {
   "name": "relay-skills",
+  "description": "Agent Skills for Relay and Relay Comments, System 3's collaboration plugins for Obsidian",
   "owner": {
     "name": "System 3",
     "url": "https://system3.md/"
