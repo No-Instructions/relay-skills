@@ -1,0 +1,19 @@
+{
+  "name": "relay",
+  "version": "0.1.0",
+  "description": "Skills for Relay and Relay Comments, System 3's collaboration plugins for Obsidian: orientation and links, inspecting sync status or resolving conflicts from the terminal, and reviewing notes through comment threads and suggested edits.",
+  "author": {
+    "name": "System 3",
+    "url": "https://system3.md/"
+  },
+  "repository": "https://github.com/No-Instructions/relay-skills",
+  "license": "MIT",
+  "keywords": [
+    "obsidian",
+    "relay",
+    "sync",
+    "collaboration",
+    "conflicts",
+    "cli"
+  ]
+}

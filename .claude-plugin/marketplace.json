@@ -1,0 +1,15 @@
+{
+  "name": "relay-skills",
+  "owner": {
+    "name": "System 3",
+    "url": "https://system3.md/"
+  },
+  "plugins": [
+    {
+      "name": "relay",
+      "source": "./",
+      "description": "Claude Skills for Relay, the real-time collaboration plugin for Obsidian",
+      "version": "0.1.0"
+    }
+  ]
+}
