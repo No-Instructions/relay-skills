@@ -2,7 +2,7 @@
 name: relay-obsidian-plugin
 description: Inspect Relay sync status and resolve Relay sync conflicts from a terminal through the Obsidian CLI, without opening notes. Use when a user asks about Relay sync state, about shared notes that are stuck or conflicted, or wants an agent to resolve conflicts on their behalf.
 metadata:
-  version: "0.1.0"
+  version: "0.1.1"
 ---
 
 # Relay from the terminal
@@ -79,13 +79,13 @@ Replace `P` with the quoted note path throughout.
 
    Read the labels before choosing a side. `theirs` is always the file on disk. `ours` is the note's collaborative copy, labelled "Local" when the conflict is between disk and the local copy, and "Remote" when it is between disk and what other people wrote. A three-way conflict also carries a shared `base`; a two-way one has none. Hunk ids are stable strings, so pass them back exactly as printed. On a long note, slice the hunk text in the projection for triage, then fetch the full hunk before deciding.
 
-3. **Decide, then resolve per hunk.**
+3. **Decide, then resolve per hunk, through the editor.** Open the note first, so the resolution runs through the editor's conflict view rather than the closed-note path; on plugin versions up to 0.8.12 the closed-note path can silently revert a resolution when the conflict came from an edit made while the folder was disconnected. The editor path holds on every version.
 
    ```sh
-   obsidian vault=<name> eval code='window.__relayDebug.resolveHunk(P,"16","theirs")'
+   obsidian vault=<name> eval code='(async()=>{const rd=window.__relayDebug;const h=await rd.openEditor(P);await rd.awaitHsmState(P,"active.conflict.bannerShown",15000);await rd.openDiffView(P);const state=await rd.resolveHunk(P,"16","theirs");await rd.closeEditor(h.handle);return JSON.stringify({state})})()'
    ```
 
-   `ours` keeps the collaborative copy, `theirs` keeps the disk text, `both` keeps ours then theirs, `neither` drops the region. When the wanted result is neither side verbatim, compose the text and call `resolveConflict(P, contents)` once instead. Both return the note's state path. Resolution works while the note is closed. If the note is open in an editor, the same call drives the editor's conflict view, and the state starts with `active.` instead of `idle.`.
+   `ours` keeps the collaborative copy, `theirs` keeps the disk text, `both` keeps ours then theirs, `neither` drops the region. When the wanted result is neither side verbatim, compose the text and call `resolveConflict(P, contents)` in place of `resolveHunk` in the same sequence. The state after a resolve starts with `active.`; closing the editor settles it to `idle.`. A note that is already open in the user's editor needs only the diff view and the resolve; do not close their tab.
 
 4. **Verify.** State, conflict flag, merge base, and whether disk matches the local store:
 
@@ -93,7 +93,13 @@ Replace `P` with the quoted note path throughout.
    obsidian vault=<name> eval code='window.__relayDebug.getHsmStateSnapshot(P).then(s=>JSON.stringify([s.statePath,s.hasConflict,s.hasLCA,s.diskMatchesIdb]))'
    ```
 
-   Expect `["idle.synced",false,true,true]` once the last hunk is resolved. While hunks remain the state stays `idle.conflict`; go back to step 2. To confirm the server copy as well, at the cost of one download:
+   Expect `["idle.synced",false,true,true]` once the last hunk is resolved. While hunks remain the state stays `idle.conflict`; go back to step 2. Then read the note back and compare it to the side you chose, not just to the server: a reverted resolution leaves disk, store, and server agreeing with each other on the unresolved text.
+
+   ```sh
+   obsidian vault=<name> eval code='window.__relayDebug.getDocumentContent(P).then(d=>JSON.stringify({disk:d.disk&&d.disk.content}))'
+   ```
+
+   To confirm the server copy as well, at the cost of one download:
 
    ```sh
    obsidian vault=<name> eval code='window.__relayDebug.getDocumentContent(P).then(d=>JSON.stringify({serverMatchesDisk:!!d.server&&!!d.disk&&d.server.content===d.disk.content}))'

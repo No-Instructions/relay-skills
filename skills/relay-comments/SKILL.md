@@ -70,7 +70,7 @@ Local identities can be registered in the plugin's settings file, `.obsidian/plu
     {
       "id": "mqvxlopr0ocsmgv",
       "name": "Claude",
-      "picture": "https://api.dicebear.com/9.x/bottts/svg?seed=mqvxlopr0ocsmgv",
+      "picture": "https://avatars.relay.md/?seed=mqvxlopr0ocsmgv",
       "color": "#7c3aed",
       "colorLight": "#7c3aed33"
     }
@@ -78,7 +78,7 @@ Local identities can be registered in the plugin's settings file, `.obsidian/plu
 }
 ```
 
-Only `id` and `name` are required. `picture` is any image URL; a generated avatar such as DiceBear seeded with your id gives a stable face without hosting anything. The plugin reloads its settings when the file changes on disk; if the sidebar still shows the plain name, reload the plugin.
+Only `id` and `name` are required. `picture` is any image URL; use Relay's avatar service at `https://avatars.relay.md/?seed=<id>` for a stable avatar seeded with your URL-encoded id. The plugin reloads its settings when the file changes on disk; if the sidebar still shows the plain name, reload the plugin.
 
 This directory lives in the vault's local plugin settings and does not travel through Relay, so it resolves your identity only on that machine. Other collaborators see your `author` name, which is why the name must stand on its own.
 
