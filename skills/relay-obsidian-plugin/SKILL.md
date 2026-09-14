@@ -2,7 +2,7 @@
 name: relay-obsidian-plugin
 description: Inspect Relay sync status and resolve Relay sync conflicts from a terminal through the Obsidian CLI, without opening notes. Use when a user asks about Relay sync state, about shared notes that are stuck or conflicted, or wants an agent to resolve conflicts on their behalf.
 metadata:
-  version: "0.1.1"
+  version: "0.1.2"
 ---
 
 # Relay from the terminal
@@ -79,15 +79,15 @@ Replace `P` with the quoted note path throughout.
 
    Read the labels before choosing a side. `theirs` is always the file on disk. `ours` is the note's collaborative copy, labelled "Local" when the conflict is between disk and the local copy, and "Remote" when it is between disk and what other people wrote. A three-way conflict also carries a shared `base`; a two-way one has none. Hunk ids are stable strings, so pass them back exactly as printed. On a long note, slice the hunk text in the projection for triage, then fetch the full hunk before deciding.
 
-3. **Decide, then resolve per hunk, through the editor.** Open the note first, so the resolution runs through the editor's conflict view rather than the closed-note path; on plugin versions up to 0.8.12 the closed-note path can silently revert a resolution when the conflict came from an edit made while the folder was disconnected. The editor path holds on every version.
+3. **Decide, then resolve the whole note through the editor.** Take one side for the whole note: `info.ours` or `info.theirs` from the conflict info is the complete text of that side. Open the note first, so the resolution runs through the editor's conflict view rather than the closed-note path, and resolve with the full text rather than by hunk:
 
    ```sh
-   obsidian vault=<name> eval code='(async()=>{const rd=window.__relayDebug;const h=await rd.openEditor(P.slice(1));await rd.awaitHsmState(P,"active.conflict.bannerShown",15000);await rd.openDiffView(P);const state=await rd.resolveHunk(P,"16","theirs");await rd.closeEditor(h.handle);return JSON.stringify({state})})()'
+   obsidian vault=<name> eval code='(async()=>{const rd=window.__relayDebug;const info=await rd.getConflictInfo(P);const chosen=info.theirs;const h=await rd.openEditor(P.slice(1));await rd.awaitHsmState(P,"active.conflict.bannerShown",15000);await rd.openDiffView(P);const state=await rd.resolveConflict(P,chosen);await rd.closeEditor(h.handle);return JSON.stringify({state,chars:chosen.length})})()'
    ```
 
-   The editor calls take the vault path without the leading slash, hence `P.slice(1)`; the machine calls take it with one.
+   Replace `info.theirs` with `info.ours` to keep the collaborative copy, or with text you composed from both sides. The editor calls take the vault path without the leading slash, hence `P.slice(1)`; the machine calls take it with one. The state after a resolve starts with `active.`; closing the editor settles it to `idle.`. A note that is already open in the user's editor needs only the diff view and the resolve; do not close their tab.
 
-   `ours` keeps the collaborative copy, `theirs` keeps the disk text, `both` keeps ours then theirs, `neither` drops the region. When the wanted result is neither side verbatim, compose the text and call `resolveConflict(P, contents)` in place of `resolveHunk` in the same sequence. The state after a resolve starts with `active.`; closing the editor settles it to `idle.`. A note that is already open in the user's editor needs only the diff view and the resolve; do not close their tab.
+   Two paths are not safe on plugin versions up to 0.8.12 and must not be used: resolving while the note is closed can silently revert when the conflict came from an edit made while the folder was disconnected, and resolving by hunk with `resolveHunk` while the note is open corrupts the note when the conflict came from a lost merge base, which is the common shape after a plugin upgrade. Whole-note resolution through the editor holds for both shapes.
 
 4. **Verify.** State, conflict flag, merge base, and whether disk matches the local store:
 
