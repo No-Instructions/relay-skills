@@ -82,8 +82,10 @@ Replace `P` with the quoted note path throughout.
 3. **Decide, then resolve per hunk, through the editor.** Open the note first, so the resolution runs through the editor's conflict view rather than the closed-note path; on plugin versions up to 0.8.12 the closed-note path can silently revert a resolution when the conflict came from an edit made while the folder was disconnected. The editor path holds on every version.
 
    ```sh
-   obsidian vault=<name> eval code='(async()=>{const rd=window.__relayDebug;const h=await rd.openEditor(P);await rd.awaitHsmState(P,"active.conflict.bannerShown",15000);await rd.openDiffView(P);const state=await rd.resolveHunk(P,"16","theirs");await rd.closeEditor(h.handle);return JSON.stringify({state})})()'
+   obsidian vault=<name> eval code='(async()=>{const rd=window.__relayDebug;const h=await rd.openEditor(P.slice(1));await rd.awaitHsmState(P,"active.conflict.bannerShown",15000);await rd.openDiffView(P);const state=await rd.resolveHunk(P,"16","theirs");await rd.closeEditor(h.handle);return JSON.stringify({state})})()'
    ```
+
+   The editor calls take the vault path without the leading slash, hence `P.slice(1)`; the machine calls take it with one.
 
    `ours` keeps the collaborative copy, `theirs` keeps the disk text, `both` keeps ours then theirs, `neither` drops the region. When the wanted result is neither side verbatim, compose the text and call `resolveConflict(P, contents)` in place of `resolveHunk` in the same sequence. The state after a resolve starts with `active.`; closing the editor settles it to `idle.`. A note that is already open in the user's editor needs only the diff view and the resolve; do not close their tab.
 
