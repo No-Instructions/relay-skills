@@ -45,4 +45,8 @@ Copy the `skills/` directory into your Codex skills path (typically `~/.codex/sk
 | [relay-obsidian-plugin](skills/relay-obsidian-plugin)  | Inspect Relay sync status and resolve sync conflicts in shared folders from the terminal, without opening notes, using the Obsidian CLI        |
 | [relay-comments](skills/relay-comments)                | Review notes, suggest edits, and work comment threads through Relay Comments, using its Obsidian CLI commands                                    |
 
+## Versions
+
+`main` describes the latest release of each plugin, and an agent that finds an older plugin upgrades it through the Obsidian CLI first. A skill for an older client line is frozen on a branch named after it, such as `relay-comments-0.4`, as a last resort for a plugin that cannot be upgraded. Each skill's own `Versions` section lists the branches.
+
 For general vault operations from the terminal, pair these with the [obsidian-cli](https://github.com/kepano/obsidian-skills/tree/main/skills/obsidian-cli) skill from [obsidian-skills](https://github.com/kepano/obsidian-skills).

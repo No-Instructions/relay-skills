@@ -10,7 +10,7 @@
       "name": "relay",
       "source": "./",
       "description": "Claude Skills for Relay, the real-time collaboration plugin for Obsidian",
-      "version": "0.1.0"
+      "version": "0.2.0"
     }
   ]
 }

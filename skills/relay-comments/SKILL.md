@@ -2,7 +2,7 @@
 name: relay-comments
 description: Collaborate on Obsidian notes through Relay Comments, the plugin that stores comments and suggested edits in the note as CriticMarkup. Use when asked to review a note, suggest edits, open or reply to a comment thread, resolve feedback, or accept and reject suggestions in a vault that uses Relay Comments.
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # Relay Comments
@@ -11,6 +11,26 @@ Relay Comments is System 3's review plugin for Obsidian, plugin id `relay-commen
 
 - Plugin listing: https://community.obsidian.md/plugins/relay-comments
 - Source: https://github.com/No-Instructions/Relay-Comments
+
+## Versions
+
+This skill describes Relay Comments 0.5.0 and later, the first releases with the CLI commands. The installed version is `version` in `.obsidian/plugins/relay-comments/manifest.json` inside the vault, and `comments --json` reports it whenever the CLI answers.
+
+An older plugin gets upgraded first, and that is your job, not the user's. The CLI has no update command of its own, but `eval` reaches Obsidian's updater, the same code the Settings button runs, and it keeps the plugin's settings and identities:
+
+```sh
+obsidian vault=<name> eval code="(async () => { await app.plugins.checkForUpdates(); const u = app.plugins.updates['relay-comments']; if (!u) return 'up to date'; await app.plugins.installPlugin(u.repo, u.version, u.manifest); return 'installed ' + u.version; })()"
+obsidian vault=<name> plugin:reload id=relay-comments
+obsidian vault=<name> comments --json
+```
+
+Confirm the version in the last answer and tell the user the plugin was upgraded. Only when the install fails, for example offline or on a vault whose plugins the user manages, read the skill for the installed line instead of this one, and say that you are working from it. Each line is frozen on a branch of this repository:
+
+| Plugin | Skill |
+|---|---|
+| 0.2 to 0.4 | [`relay-comments-0.4`](https://github.com/No-Instructions/relay-skills/blob/relay-comments-0.4/skills/relay-comments/SKILL.md): no CLI, edit the markup directly |
+
+`main` always describes the latest release.
 
 ## Choose the role
 
@@ -47,7 +67,7 @@ Confirm the answer is `"ok": true` before anything else. It reports the plugin v
 Rules the commands enforce, so plan around them:
 
 - Name a thread by the number from your latest `threads` listing, or by its anchor id. Numbers shift when threads are added or resolved, so list again after acting.
-- Name a passage by an exact quote. When it occurs more than once, add `line=`; the error lists the candidate lines. A quote that touches an existing mark is refused because CriticMarkup cannot nest, so reply to that thread instead. Quoting a native `==highlight==` exactly attaches the comment after it without rewriting it.
+- Name a passage by an exact quote of the text after any bullet or heading hashes. When it occurs more than once, add `line=`; the error lists the candidate lines. A quote that touches an existing mark is refused because CriticMarkup cannot nest, so reply to that thread instead. Quoting a native `==highlight==` exactly attaches the comment after it without rewriting it.
 - Edits to an open note go through its editor, so collaborators and undo see an ordinary edit. A read-only note refuses. A closed note is edited on disk atomically.
 - Every comment the CLI writes carries `author`, `authorId` when the identity has one, and a `date`.
 - Undo follows the signature. Without `author=` you act as the user, and the user's Ctrl+Z can take the edit back. With `author=` naming another identity, such as your own agent identity, the edit is yours, not theirs: it stays out of the user's undo history like a collaborator's change. Every write command, including resolve, accept, reject, and suggest, takes `author=`, and each result reports `undoable`.
@@ -68,6 +88,8 @@ When the CLI is unavailable you edit the markup directly. The commands write exa
 | Replacement | `{~~old~>new~~}` |
 | Highlight | `{==marked text==}` |
 | Comment | `{>>comment text<<}` |
+
+A highlight or comment anchors to text, never to a line's block syntax. Write `## {==Heading==}` and `- {==item==}`, not `{==## Heading==}`: a mark around the hashes or bullet turns the line into a paragraph, and Obsidian's own `==highlight==` parser can then run a highlight down the rest of it. Keep a literal colour emoji such as `🔴` at the start of a passage outside the mark too; inside one it becomes the highlight's colour marker and is removed on resolve.
 
 A comment attached to a native highlight is written immediately after it without converting it.
 
@@ -99,7 +121,7 @@ If you are writing on behalf of the user, always use their relay ID and author s
 
 To create an identity, pick a random alphanumeric 15 digit id. pocketbase compatible.
 
-Local identities are registered in the plugin's settings file, `.obsidian/plugins/relay-comments/data.json` inside the vault, under `identities`. With the user's permission you may add the entry yourself.
+Local identities are registered in the plugin's settings file, `.obsidian/plugins/relay-comments/data.json` inside the vault, under `identities`. Add the entry yourself and mention it.
 
 ```json
 {
