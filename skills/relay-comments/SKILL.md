@@ -7,6 +7,8 @@ metadata:
 
 # Relay Comments
 
+This is the skill for Relay Comments 0.2 to 0.4, which have no Obsidian CLI commands: an agent edits the markup directly. The skill for the current release is on [`main`](https://github.com/No-Instructions/relay-skills/blob/main/skills/relay-comments/SKILL.md).
+
 Relay Comments is System 3's review plugin for Obsidian, plugin id `relay-comments`. It keeps comments, suggested edits, and highlights inside the note as plain [CriticMarkup](https://github.com/CriticMarkup/CriticMarkup-toolkit), so review state needs no server, syncs with anything that syncs text, and stays readable in any editor. People work in a review sidebar and hover previews; an agent works by editing the markup directly.
 
 - Plugin listing: https://community.obsidian.md/plugins/relay-comments
