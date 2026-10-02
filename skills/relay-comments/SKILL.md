@@ -14,25 +14,17 @@ Relay Comments is System 3's review plugin for Obsidian, plugin id `relay-commen
 
 ## Versions
 
-This skill describes Relay Comments 0.5.0 and later, the first releases with the CLI commands. The installed version is `version` in `.obsidian/plugins/relay-comments/manifest.json` inside the vault, and `comments --json` reports it whenever the CLI answers.
-
-An older plugin gets upgraded first, and that is your job, not the user's. The CLI has no update command of its own, but `eval` reaches Obsidian's updater, the same code the Settings button runs, and it keeps the plugin's settings and identities:
-
+This skill describes Relay Comments 0.5.0 and later. If the plugin is out of date, update it.
+In order to upgrade Relay Comments, follow the procedure below:
 ```sh
 obsidian vault=<name> eval code="(async () => { await app.plugins.checkForUpdates(); const u = app.plugins.updates['relay-comments']; if (!u) return 'up to date'; await app.plugins.installPlugin(u.repo, u.version, u.manifest); return 'installed ' + u.version; })()"
 obsidian vault=<name> plugin:reload id=relay-comments
 obsidian vault=<name> comments --json
 ```
 
-Confirm the version in the last answer and tell the user the plugin was upgraded. Only when the install fails, for example offline or on a vault whose plugins the user manages, read the skill for the installed line instead of this one, and say that you are working from it. Each line is frozen on a branch of this repository:
+Confirm the version in the last answer and tell the user the plugin was upgraded. If you are unable to upgrade, or the user has pinned the version, then you can find old documentation by reading the relay-skills repo's branches and selecting the appropriate version (e.g. `relay-comments-0.4`).
 
-| Plugin | Skill |
-|---|---|
-| 0.2 to 0.4 | [`relay-comments-0.4`](https://github.com/No-Instructions/relay-skills/blob/relay-comments-0.4/skills/relay-comments/SKILL.md): no CLI, edit the markup directly |
-
-`main` always describes the latest release.
-
-## Choose the role
+## Choose your role
 
 Infer the role from the request and combine roles when needed:
 
@@ -40,42 +32,17 @@ Infer the role from the request and combine roles when needed:
 - **Reviewer**: preserve the source text and propose changes with CriticMarkup.
 - **Thread participant**: investigate, reply, challenge, clarify, or resolve feedback.
 
-A request only to review or assess is read-only: report findings and wait for authorization before writing annotations. Never silently replace clean source text during a review.
-
 ## Reach the plugin from the terminal
 
-The plugin registers a `comments` command family with the Obsidian CLI. It needs Obsidian desktop 1.12.4 or later with the command line interface enabled under Settings, General, Advanced, Relay Comments 0.5 or later, and Obsidian running with the vault open. The same commands work on Windows, macOS, and Linux; only the shell quoting differs.
+The plugin registers a `comments` command family with the Obsidian CLI. It needs Obsidian desktop 1.12.4 or later with the command line interface enabled under Settings, General, Advanced, and Obsidian running with the vault open. The same commands work on Windows, macOS, and Linux; only the shell quoting differs.
 
 Always pass the vault first, then the command, then `key=value` parameters. Add `--json` for machine output. The CLI exits 0 whatever happened, so read `ok` in the JSON envelope; a failure carries `code` and `message`.
 
+Use the top level `--help` command to discover usage information. The CLI is self-documenting.
+
 ```sh
-obsidian vault=<name> comments --json
+obsidian vault=<name> comments --help
 ```
-
-Confirm the answer is `"ok": true` before anything else. It reports the plugin version, the identity your comments will be signed with, the identity directory, and the current watch cursor. `Command "comments" not found` means the plugin is missing, disabled, or too old.
-
-| Command | What it does |
-|---|---|
-| `comments:threads path=<note\|canvas\|folder> [--open]` | List threads in document order with a number, the anchor id, kind, 1-based line, anchor text, and every comment with author and date. A folder lists only notes that have threads. |
-| `comments:watch [path=<note\|canvas\|folder>] [since=<cursor>] [timeout=<seconds>] [kind=<kinds>] [ignore-author=<names>]` | Wait for the next comment, reply, resolution, or suggestion in scope, then print it with a cursor. |
-| `comments:comment path=<note\|canvas> (quote=<passage> \| node=<id>) text=<comment> [line=<n>] [author=<name>]` | Open a thread on an exact passage, or pin a comment to a canvas node. |
-| `comments:reply path=<note\|canvas> thread=<n\|id> text=<reply> [author=<name>]` | Append to a thread. |
-| `comments:resolve path=<note\|canvas> thread=<n\|id>` | Resolve a thread: its comments go, a highlight unwraps, a suggestion stays, a canvas pin is marked resolved. |
-| `comments:accept path=<note\|canvas> thread=<n\|id>` and `comments:reject ...` | Apply a suggested edit and drop its comments. |
-| `comments:suggest path=<note\|canvas> quote=<passage> (replace=<text> \| insert=<text> \| --delete) [node=<id>] [line=<n>] [comment=<text>] [author=<name>]` | Suggest a replacement, an insertion after the passage, or a deletion, optionally explaining why. |
-
-Rules the commands enforce, so plan around them:
-
-- Name a thread by the number from your latest `threads` listing, or by its anchor id. Numbers shift when threads are added or resolved, so list again after acting.
-- Name a passage by an exact quote of the text after any bullet or heading hashes. When it occurs more than once, add `line=`; the error lists the candidate lines. A quote that touches an existing mark is refused because CriticMarkup cannot nest, so reply to that thread instead. Quoting a native `==highlight==` exactly attaches the comment after it without rewriting it.
-- Edits to an open note go through its editor, so collaborators and undo see an ordinary edit. A read-only note refuses. A closed note is edited on disk atomically.
-- Every comment the CLI writes carries `author`, `authorId` when the identity has one, and a `date`.
-- Undo follows the signature. Without `author=` you act as the user, and the user's Ctrl+Z can take the edit back. With `author=` naming another identity, such as your own agent identity, the edit is yours, not theirs: it stays out of the user's undo history like a collaborator's change. Every write command, including resolve, accept, reject, and suggest, takes `author=`, and each result reports `undoable`.
-- Multi-line text uses literal `\n` inside the value.
-
-On a canvas, `threads` lists the CriticMarkup threads in each text card and each comment pin, node by node, with the node id. A quote is searched in the text cards and must match in exactly one; add `node=` to pick the card. To comment on a card without quoting text, pin to it with `node=<id>` and no `quote=`. Reply to and resolve pins like any thread; resolving marks the pin resolved.
-
-Read the result of every write: it prints the thread after the change. Then run `threads` again before the next action on the same note.
 
 ## The marks
 
@@ -89,7 +56,7 @@ When the CLI is unavailable you edit the markup directly. The commands write exa
 | Highlight | `{==marked text==}` |
 | Comment | `{>>comment text<<}` |
 
-A highlight or comment anchors to text, never to a line's block syntax. Write `## {==Heading==}` and `- {==item==}`, not `{==## Heading==}`: a mark around the hashes or bullet turns the line into a paragraph, and Obsidian's own `==highlight==` parser can then run a highlight down the rest of it. Keep a literal colour emoji such as `🔴` at the start of a passage outside the mark too; inside one it becomes the highlight's colour marker and is removed on resolve.
+A highlight or comment anchors to text, never to a line's block syntax. Write `## {==Heading==}` and `- {==item==}`, not `{==## Heading==}`: a mark around the hashes or bullet turns the line into a paragraph, and Obsidian's own `==highlight==` parser can then run a highlight down the rest of it.
 
 A comment attached to a native highlight is written immediately after it without converting it.
 
@@ -137,7 +104,7 @@ Local identities are registered in the plugin's settings file, `.obsidian/plugin
 }
 ```
 
-Only `id` and `name` are required. `picture` is any image URL; use Relay's avatar service at `https://avatars.relay.md/?seed=<id>` for a stable avatar seeded with your URL-encoded id. The plugin reloads its settings when the file changes on disk; `comments --json` lists the directory it sees.
+Only `id` and `name` are required. `picture` is any image URL; use Relay's avatar service at `https://avatars.relay.md/?seed=<id>` for a stable avatar seeded with your URL-encoded id. The plugin reloads its settings when the file changes on disk.
 
 This directory lives in the vault's local plugin settings and does not travel through Relay, so it resolves your identity only on that machine. Other collaborators see your `author` name, which is why the name must stand on its own.
 
