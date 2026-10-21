@@ -1,7 +1,7 @@
 {
   "name": "relay",
   "version": "0.2.0",
-  "description": "Skills for Relay and Relay Comments, System 3's collaboration plugins for Obsidian: orientation and links, inspecting sync status or resolving conflicts from the terminal, and reviewing notes through comment threads and suggested edits.",
+  "description": "Skills for Relay and Relay Comments, System 3's collaboration plugins for Obsidian: vault setup with editable defaults, Relay installation and self-hosting, orientation and links, sync status and conflict resolution, and reviewing notes through comment threads and suggested edits.",
   "author": {
     "name": "System 3",
     "url": "https://system3.md/"

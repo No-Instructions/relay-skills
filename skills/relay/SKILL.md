@@ -29,6 +29,9 @@ Relay is System 3's real-time collaboration plugin for Obsidian. Users share fol
 
 ## Related skills
 
+- `obsidian-vault-setup`, in this repository: create or configure a vault using editable settings defaults.
+- `relay-setup`, in this repository: install and enable Relay, then complete sign-in and shared-folder setup.
+- `relay-self-hosting`, in this repository: deploy a private Relay Server with persistent storage and register it in Obsidian.
 - `relay-obsidian-plugin`, in this repository: inspect sync status and resolve conflicts in a running vault through the Obsidian CLI.
 - `relay-comments`, in this repository: review notes, suggest edits, and work comment threads through the Relay Comments plugin.
 - [obsidian-skills](https://github.com/kepano/obsidian-skills): general Obsidian work, including the `obsidian-cli` skill for vault operations from the terminal.
