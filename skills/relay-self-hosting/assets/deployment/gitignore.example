@@ -1,0 +1,4 @@
+.env
+auth.env
+data/
+backups/

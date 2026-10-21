@@ -1,0 +1,5 @@
+# Replace the [store] block in relay.toml for a document-only evaluation.
+# Attachment storage requires an S3-compatible backend.
+[store]
+type = "filesystem"
+path = "/app/data"

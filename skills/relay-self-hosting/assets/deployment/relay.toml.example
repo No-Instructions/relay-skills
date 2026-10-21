@@ -1,0 +1,23 @@
+# Set the client-reachable private HTTPS URL before starting the server.
+[server]
+url = "https://relay.YOUR-TAILNET.ts.net"
+host = "0.0.0.0"
+port = 8080
+
+# Public verification keys. Check the current set before deployment:
+# https://github.com/No-Instructions/relay-server-template/blob/main/relay.toml.example
+[[auth]]
+key_id = "relay_2025_10_22"
+public_key = "/6OgBTHaRdWLogewMdyE+7AxnI0/HP3WGqRs/bYBlFg="
+
+[[auth]]
+key_id = "relay_2025_10_23"
+public_key = "fbm9JLHrwPpST5HAYORTQR/i1VbZ1kdp2ZEy0XpMbf0="
+
+# AWS S3 persistence for documents and attachments.
+# Credentials come from auth.env, not this file.
+[store]
+type = "aws"
+bucket = "YOUR-BUCKET-NAME"
+region = "us-east-1"
+prefix = "relay/"

@@ -1,0 +1,7 @@
+# Replace the [store] block in relay.toml with this block for Cloudflare R2.
+# Credentials come from AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in auth.env.
+[store]
+type = "cloudflare"
+account_id = "YOUR-CLOUDFLARE-ACCOUNT-ID"
+bucket = "YOUR-BUCKET-NAME"
+prefix = "relay/"
