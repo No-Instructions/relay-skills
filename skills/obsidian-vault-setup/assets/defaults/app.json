@@ -1,0 +1,16 @@
+{
+  "alwaysUpdateLinks": true,
+  "newFileLocation": "current",
+  "attachmentFolderPath": "./Attachments",
+  "useMarkdownLinks": false,
+  "promptDelete": true,
+  "trashOption": "local",
+  "defaultViewMode": "source",
+  "livePreview": true,
+  "readableLineLength": true,
+  "showLineNumber": true,
+  "foldHeading": true,
+  "foldIndent": true,
+  "spellcheck": true,
+  "settingsPopoutWindow": false
+}
