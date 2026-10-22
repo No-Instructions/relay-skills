@@ -11,6 +11,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 CONFIGURE = ROOT / "skills/obsidian-vault-setup/scripts/configure_vault.py"
 INSTALL = ROOT / "skills/relay-setup/scripts/install_bundle.py"
+REGISTER = ROOT / "skills/relay-setup/scripts/register_vault.py"
 
 
 class SetupTests(unittest.TestCase):
@@ -191,6 +192,50 @@ class SetupTests(unittest.TestCase):
         self.run_helper(CONFIGURE, success=False)
         self.install(success=False)
         self.assertEqual(list(outside.iterdir()), [])
+
+    def test_register_new_vault_is_idempotent(self):
+        self.vault.mkdir()
+        profile = self.root / "profile"
+        self.run_helper(REGISTER, "--profile", profile)
+        registry = profile / "obsidian.json"
+        original = registry.read_bytes()
+        entry = next(iter(self.read_json(registry)["vaults"].values()))
+        self.assertEqual(entry["path"], str(self.vault))
+        self.assertTrue(entry["open"])
+        self.run_helper(REGISTER, "--profile", profile)
+        self.assertEqual(registry.read_bytes(), original)
+        self.assertEqual(list(profile.glob("vault-registry-backup-*")), [])
+
+    def test_register_preserves_existing_vaults_preferences_and_id(self):
+        self.vault.mkdir()
+        profile = self.root / "profile"
+        registry = profile / "obsidian.json"
+        other = {"path": str(self.root / "Other"), "open": True, "ts": 12}
+        self.write_json(registry, {
+            "vaults": {"existing": {"path": str(self.vault), "open": False, "custom": 42}, "other": other},
+            "customPreference": "keep",
+        })
+        original = registry.read_bytes()
+        self.run_helper(REGISTER, "--profile", profile)
+        result = self.read_json(registry)
+        self.assertEqual(set(result["vaults"]), {"existing", "other"})
+        self.assertTrue(result["vaults"]["existing"]["open"])
+        self.assertEqual(result["vaults"]["existing"]["custom"], 42)
+        self.assertEqual(result["vaults"]["other"], other)
+        self.assertEqual(result["customPreference"], "keep")
+        backups = list(profile.glob("vault-registry-backup-*"))
+        self.assertEqual(len(backups), 1)
+        self.assertEqual(backups[0].read_bytes(), original)
+
+    def test_invalid_registry_is_not_changed(self):
+        self.vault.mkdir()
+        profile = self.root / "profile"
+        registry = profile / "obsidian.json"
+        self.write_json(registry, {"vaults": {"invalid": None}})
+        original = registry.read_bytes()
+        self.run_helper(REGISTER, "--profile", profile, success=False)
+        self.assertEqual(registry.read_bytes(), original)
+        self.assertEqual(list(profile.glob("vault-registry-backup-*")), [])
 
 
 if __name__ == "__main__":

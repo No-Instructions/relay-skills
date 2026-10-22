@@ -64,11 +64,12 @@ obsidian vault="My Vault" plugins:enabled filter=community versions
 obsidian vault="My Vault" eval code='app.plugins.plugins["system3-relay"]?.manifest.version ?? "Relay is not loaded"'
 ```
 
-An exit code alone does not establish success. If the CLI is unavailable, use
-**Settings → Community plugins → Turn on community plugins → Browse → Relay →
-Install → Enable**. The [official installation guide](https://docs.relay.md/guides/install-relay-for-obsidian/)
-describes this path. For preparing files before the first launch, or installing
-a specific published release, use [references/bundle-install.md](references/bundle-install.md).
+An exit code alone does not establish success. If the CLI is unavailable,
+prepare the published bundle using [references/bundle-install.md](references/bundle-install.md),
+then complete [automatic first launch](references/first-launch.md) through CDP.
+Use the same workflow for a new vault or a specific published release. Setup includes
+disabling Restricted mode and verifying Relay loads after a restart; do not
+leave plugin activation as a manual step for the user.
 
 ## Sign in and connect a folder
 
@@ -102,6 +103,11 @@ an array of plugin ids. Adding an id to this file does not download a plugin:
 the CLI workflow installs missing entries; the bundle helper requires other
 listed plugins to be installed already. Changes apply to future setup runs;
 apply them to a particular vault as well only when requested.
+
+The separate [assets/defaults/local-storage.json](assets/defaults/local-storage.json)
+enables community plugins in Obsidian's local app profile. The first-launch
+helper applies this per vault; it is not an `app.json` setting or a file to copy
+into `.obsidian`.
 
 Relay uses its own shipped settings for a new installation. Do not distribute
 a copied `data.json`, feature-flag profile, or endpoint configuration as a

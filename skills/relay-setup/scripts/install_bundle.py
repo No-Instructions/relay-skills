@@ -141,7 +141,7 @@ def main():
                 print(f"Backups: {backup}")
         if not changes:
             print("Bundle and enabled plugins already match; no changes.")
-        print(f"Relay {version}: {'validated' if args.dry_run else 'prepared on disk'}; verify loading in Obsidian.")
+        print(f"Relay {version}: {'validated' if args.dry_run else 'prepared on disk'}; complete automatic first-launch activation before reporting setup complete.")
         return 0
     except (OSError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)

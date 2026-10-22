@@ -46,7 +46,9 @@ running to prepare the files.
    containing just the desired file and keys with `--defaults-dir PATH`;
    `--overwrite` then changes only those keys.
 
-4. Open the prepared folder through **Manage vaults → Open folder as vault**.
+4. For a request that includes Relay, continue with `relay-setup` now; its
+   first-launch workflow registers the folder and activates plugins automatically.
+   For vault-only setup, open the prepared folder through **Manage vaults → Open folder as vault**.
    This registers it with Obsidian without replacing the application's vault
    registry. Check Files and links, Editor, and Core plugins against the files
    applied. If the CLI is enabled, use `plugins:enabled filter=core` and

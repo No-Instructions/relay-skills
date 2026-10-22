@@ -1,8 +1,10 @@
 # Install a published Relay bundle
 
 Use this path to prepare a closed vault, including before its first launch.
-The helper needs Python 3.9 or later. It copies release files and merges plugin
-enablement without changing the vault's notes or existing Relay settings.
+The file helper needs Python 3.9 or later. It copies release files and merges
+plugin enablement without changing the vault's notes or existing Relay settings.
+Complete the [automatic first launch](first-launch.md) after preparing files;
+file preparation alone leaves a fresh Obsidian profile in Restricted mode.
 
 ## Obtain the release
 
@@ -66,10 +68,9 @@ helper backs up changed existing files under
 Close the vault and restore those files to undo a replacement. It never
 copies or changes `data.json`, authentication state, or shared-folder records.
 
-## Finish in Obsidian
+## Activate automatically
 
-Open the vault, turn on community plugins if Restricted mode is enabled, and
-confirm Relay is enabled and loaded. An enabled-plugin JSON file is not proof
-that the app allowed or loaded the plugin. Use the CLI verification in the
-skill, or inspect **Settings → Community plugins → Relay**. Then complete the
-sign-in and folder setup requested by the user.
+Follow [automatic first launch](first-launch.md) to open the prepared vault,
+disable Restricted mode, and verify Relay loaded. Do this as part of setup;
+do not hand the user instructions to enable plugins manually. Then complete
+the sign-in and folder setup requested by the user.
