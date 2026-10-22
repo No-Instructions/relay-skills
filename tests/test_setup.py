@@ -199,6 +199,7 @@ class SetupTests(unittest.TestCase):
         self.run_helper(REGISTER, "--profile", profile)
         registry = profile / "obsidian.json"
         original = registry.read_bytes()
+        self.assertTrue(self.read_json(registry)["cli"])
         entry = next(iter(self.read_json(registry)["vaults"].values()))
         self.assertEqual(entry["path"], str(self.vault))
         self.assertTrue(entry["open"])
@@ -213,7 +214,7 @@ class SetupTests(unittest.TestCase):
         other = {"path": str(self.root / "Other"), "open": True, "ts": 12}
         self.write_json(registry, {
             "vaults": {"existing": {"path": str(self.vault), "open": False, "custom": 42}, "other": other},
-            "customPreference": "keep",
+            "customPreference": "keep", "cli": False,
         })
         original = registry.read_bytes()
         self.run_helper(REGISTER, "--profile", profile)
@@ -223,6 +224,7 @@ class SetupTests(unittest.TestCase):
         self.assertEqual(result["vaults"]["existing"]["custom"], 42)
         self.assertEqual(result["vaults"]["other"], other)
         self.assertEqual(result["customPreference"], "keep")
+        self.assertTrue(result["cli"])
         backups = list(profile.glob("vault-registry-backup-*"))
         self.assertEqual(len(backups), 1)
         self.assertEqual(backups[0].read_bytes(), original)
@@ -236,6 +238,18 @@ class SetupTests(unittest.TestCase):
         self.run_helper(REGISTER, "--profile", profile, success=False)
         self.assertEqual(registry.read_bytes(), original)
         self.assertEqual(list(profile.glob("vault-registry-backup-*")), [])
+
+    def test_register_enables_cli_for_already_open_vault(self):
+        self.vault.mkdir()
+        profile = self.root / "profile"
+        registry = profile / "obsidian.json"
+        self.write_json(registry, {
+            "vaults": {"existing": {"path": str(self.vault), "open": True}},
+            "cli": False,
+        })
+        self.run_helper(REGISTER, "--profile", profile)
+        self.assertTrue(self.read_json(registry)["cli"])
+        self.assertEqual(set(self.read_json(registry)["vaults"]), {"existing"})
 
 
 if __name__ == "__main__":

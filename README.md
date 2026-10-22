@@ -35,9 +35,10 @@ Copy the `skills/` directory into your Codex skills path (typically `~/.codex/sk
 
 The setup skills can prepare files before Obsidian is running. Their helpers
 require Python 3.9 or later; installing through the Obsidian UI is also supported.
-Automatic first-launch activation through CDP requires Node.js 22 or later
-when the Obsidian CLI is unavailable. It disables Restricted mode and verifies
-that the requested plugins load, without manual enablement steps.
+Automatic first-launch activation uses Obsidian's normal CLI socket and
+requires Node.js 18 or later. Profile defaults enable CLI support for a normal
+launch; no debugging port or special launch flags are needed. Activation
+disables Restricted mode and verifies that the requested plugins load.
 For the sync-status, conflict-resolution, and comment skills:
 
 - Obsidian desktop 1.12.4 or later, with the command line interface enabled under Settings, General, Advanced.

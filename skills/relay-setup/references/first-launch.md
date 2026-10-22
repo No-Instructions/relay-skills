@@ -12,9 +12,12 @@ device/profile: repeat activation when setting up another device.
 
 ## Open and activate
 
-If the Obsidian CLI is already available, use the skill's `plugins:restrict off`
-and `plugin:enable` commands and verify loading. Otherwise use the CDP helper,
-which needs Node.js 22 or later and no npm packages:
+Use an ordinary running Obsidian desktop app with CLI support. No debug port,
+special launch arguments, or control over the app's launcher is required.
+The activation helper connects to Obsidian's normal local CLI socket, uses
+`eval`, and checks the exact vault path before changing anything. It needs
+Node.js 18 or later and no npm packages. The installed `obsidian` CLI can also
+run the commands in the skill; the helper does not require it on `PATH`.
 
 1. Finish the bundle installation while the target vault is closed.
 2. For a new folder, register it while Obsidian is stopped:
@@ -28,30 +31,33 @@ which needs Node.js 22 or later and no npm packages:
    `~/Library/Application Support/obsidian` on macOS, and `%APPDATA%/obsidian`
    on Windows; a `--user-data-dir` argument overrides the location. The helper
    merges the vault into `obsidian.json`, marks it to open at startup, preserves
-   other vaults and preferences, and backs up an existing registry. Do not run
-   it against a live profile that could overwrite the registry from memory.
-3. Start the installed **desktop application executable** with
-   `--remote-debugging-address=127.0.0.1 --remote-debugging-port=9222`. The
-   registered vault opens at startup. For an already registered vault, the
-   [open URI](https://help.obsidian.md/uri) can select it explicitly. Choose
-   an unused local port if necessary. On Linux, resolve the desktop executable
-   or AppImage; a command named `obsidian` may be only a CLI wrapper. On macOS,
-   use the executable inside `Obsidian.app`; on Windows use `Obsidian.exe`.
-   Use the user's intended profile so the permission persists where they work.
-   If Obsidian is already running without CDP, close/restart it normally after
-   allowing pending edits to save; a second launch may forward to the existing
-   process without enabling debugging. Never terminate unrelated processes.
+   other vaults and preferences, and backs up an existing registry. It also
+   applies [profile.json](../assets/defaults/profile.json), whose `"cli": true`
+   enables the app's CLI preference. Use `--defaults-file PATH` for an override.
+   Do not edit a live profile that could overwrite the registry from memory.
+3. Use the app as it is normally opened. The registered vault opens at startup;
+   an already running instance with CLI enabled needs no relaunch. The helper
+   does not launch Obsidian or alter its startup arguments. If CLI support is
+   disabled, its socket rejects `eval` too: apply the profile defaults while
+   the app is closed, then use its next normal launch. Do not claim a disabled
+   CLI can be enabled through that same gated socket.
 4. From this skill's directory, run:
 
    ```sh
-   node scripts/activate_plugins.mjs --vault "/absolute/path/My Vault" --port 9222
+   node scripts/activate_plugins.mjs --vault "/absolute/path/My Vault"
    ```
 
-The helper waits for the exact vault path, applies the permission, reloads the
-window, and verifies every requested plugin has a loaded version. It does not
+The helper waits for the exact vault path, applies the permission, reloads only
+that vault window, and verifies every requested plugin has a loaded version. It does not
 require the user to click the trust prompt or enable a plugin. It fails if no
 matching vault opens or a requested plugin fails to load. Investigate failures;
 do not replace verification with instructions for the user to finish setup.
+
+It discovers the normal per-user socket on Linux and macOS or named pipe on
+Windows. Use `--socket PATH` only when the running app uses another endpoint.
+Do not start a separate instance or overwrite the user's socket to make a
+connection succeed. Socket protocol details are version-dependent; surface
+an unsupported-client error rather than falling back to a debugging port.
 
 Use `--plugins-file PATH` with the same enablement list used for installation.
 Use `--storage-file PATH` for a one-vault local-storage override, or edit the
@@ -60,14 +66,14 @@ controls the bounded startup wait (60 seconds by default).
 
 ## Verify persistence
 
-Close Obsidian normally and reopen the same vault and profile. Then run the
-helper in observation-only mode:
+Run the helper in observation-only mode to check the existing instance:
 
 ```sh
-node scripts/activate_plugins.mjs --vault "/absolute/path/My Vault" --port 9222 --check
+node scripts/activate_plugins.mjs --vault "/absolute/path/My Vault" --check
 ```
 
-`--check` never changes storage or reloads the window. Success confirms the
-permission and loaded plugin versions survived a restart. Report plugin setup
-complete only after this check passes. Account sign-in and connecting shared
-folders are separate from plugin activation.
+`--check` never changes storage or reloads the window. Report plugin setup
+complete only after this check passes. When validating setup defaults, also
+close and reopen a disposable profile normally and repeat `--check` to verify
+persistence. Account sign-in and connecting shared folders are separate from
+plugin activation.

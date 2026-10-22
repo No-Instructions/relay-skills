@@ -66,9 +66,11 @@ obsidian vault="My Vault" eval code='app.plugins.plugins["system3-relay"]?.manif
 
 An exit code alone does not establish success. If the CLI is unavailable,
 prepare the published bundle using [references/bundle-install.md](references/bundle-install.md),
-then complete [automatic first launch](references/first-launch.md) through CDP.
+then complete [automatic first launch](references/first-launch.md) through the
+normal CLI socket. This requires CLI support enabled in the app's profile;
+the first-launch guide covers preparing that preference before a normal launch.
 Use the same workflow for a new vault or a specific published release. Setup includes
-disabling Restricted mode and verifying Relay loads after a restart; do not
+disabling Restricted mode and verifying Relay loads; do not
 leave plugin activation as a manual step for the user.
 
 ## Sign in and connect a folder
@@ -108,6 +110,11 @@ The separate [assets/defaults/local-storage.json](assets/defaults/local-storage.
 enables community plugins in Obsidian's local app profile. The first-launch
 helper applies this per vault; it is not an `app.json` setting or a file to copy
 into `.obsidian`.
+
+[assets/defaults/profile.json](assets/defaults/profile.json) enables CLI support
+in the app's `obsidian.json`. The registration helper applies it to a stopped
+profile, preserving unrelated preferences. Activation uses the ordinary CLI
+socket and never requires a debugging port or special startup flags.
 
 Relay uses its own shipped settings for a new installation. Do not distribute
 a copied `data.json`, feature-flag profile, or endpoint configuration as a

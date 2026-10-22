@@ -1,57 +1,65 @@
 #!/usr/bin/env node
-// Complete a prepared vault's first launch through Obsidian's local CDP endpoint.
+// Activate a prepared vault through the CLI socket of a normally running Obsidian.
 import { readFile, realpath } from 'node:fs/promises';
+import { createConnection } from 'node:net';
+import { homedir, platform, userInfo } from 'node:os';
+import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 
 const defaults = new URL('../assets/defaults/', import.meta.url);
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-async function request(url, method, params = {}) {
+async function request(endpoint, argv, cwd) {
   return new Promise((resolve, reject) => {
-    const socket = new WebSocket(url);
+    const socket = createConnection(endpoint);
+    let output = '';
     let settled = false;
-    const finish = (error, result) => {
+    const finish = error => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      socket.close();
-      if (error) reject(error); else resolve(result);
+      socket.destroy();
+      if (error) reject(error); else resolve(output);
     };
-    const timer = setTimeout(() => finish(new Error(`CDP timed out: ${method}`)), 10000);
-    socket.addEventListener('error', () => finish(new Error('CDP connection failed')));
-    socket.addEventListener('open', () => socket.send(JSON.stringify({ id: 1, method, params })));
-    socket.addEventListener('message', event => {
-      const reply = JSON.parse(event.data);
-      if (reply.id !== 1) return;
-      if (reply.error) return finish(new Error(reply.error.message));
-      if (reply.result?.exceptionDetails) {
-        return finish(new Error(reply.result.exceptionDetails.exception?.description || 'Evaluation failed'));
-      }
-      finish(null, reply.result);
+    const timer = setTimeout(() => finish(new Error('Obsidian CLI request timed out')), 10000);
+    socket.setEncoding('utf8');
+    socket.on('error', finish);
+    socket.on('connect', () => socket.write(JSON.stringify({ argv, cwd, tty: false }) + '\n'));
+    socket.on('data', chunk => {
+      output += chunk;
+      if (output.length > 4 * 1024 * 1024) finish(new Error('Obsidian CLI response is too large'));
     });
+    socket.on('end', () => finish());
   });
 }
 
-async function evaluate(url, expression) {
-  const result = await request(url, 'Runtime.evaluate', {
-    expression, awaitPromise: true, returnByValue: true,
-  });
-  return result.result?.value;
+async function evaluate(endpoint, vault, expression) {
+  const output = await request(endpoint, ['eval', `code=JSON.stringify(${expression})`], vault);
+  const result = output.split('\n').filter(line => line.startsWith('=> ')).at(-1);
+  if (!result) throw new Error(output.trim() || 'Obsidian CLI returned no result');
+  return JSON.parse(result.slice(3));
+}
+
+function socketPaths() {
+  if (platform() === 'win32') return [`\\\\.\\pipe\\obsidian-cli-${userInfo().username}`];
+  if (platform() === 'darwin') return [join(homedir(), '.obsidian-cli.sock')];
+  return [...new Set([
+    join(process.env.XDG_RUNTIME_DIR || homedir(), '.obsidian-cli.sock'),
+    join(homedir(), '.flatpak/md.obsidian.Obsidian/xdg-run/.obsidian-cli.sock'),
+  ])];
 }
 
 async function main() {
-  if (typeof WebSocket === 'undefined') throw new Error('Node.js 22 or later is required');
   const { values } = parseArgs({ options: {
-    vault: { type: 'string' }, port: { type: 'string', default: '9222' },
+    vault: { type: 'string' }, socket: { type: 'string' },
     'plugins-file': { type: 'string' }, 'storage-file': { type: 'string' },
     timeout: { type: 'string', default: '60' }, check: { type: 'boolean', default: false },
   } });
-  if (!values.vault) throw new Error('Usage: activate_plugins.mjs --vault PATH [--port 9222] [--check]');
+  if (!values.vault) throw new Error('Usage: activate_plugins.mjs --vault PATH [--socket PATH] [--check]');
   const vault = await realpath(values.vault);
-  const port = Number(values.port), timeout = Number(values.timeout);
-  if (!Number.isInteger(port) || port < 1 || port > 65535 || !Number.isFinite(timeout) || timeout <= 0) {
-    throw new Error('Port and timeout must be positive numbers; port must be an integer below 65536');
-  }
+  const endpoints = values.socket ? [values.socket] : socketPaths();
+  const timeout = Number(values.timeout);
+  if (!Number.isFinite(timeout) || timeout <= 0) throw new Error('Timeout must be a positive number');
   const ids = JSON.parse(await readFile(values['plugins-file'] || new URL('community-plugins.json', defaults), 'utf8'));
   const storage = JSON.parse(await readFile(values['storage-file'] || new URL('local-storage.json', defaults), 'utf8'));
   if (!Array.isArray(ids) || !ids.every(id => typeof id === 'string' && /^[A-Za-z0-9_-]+$/.test(id))) {
@@ -72,32 +80,37 @@ async function main() {
   })()`;
   const deadline = Date.now() + timeout * 1000;
   let reloaded = false;
-  let lastError = 'No open Obsidian window matches the requested vault';
+  let lastError = 'No running Obsidian CLI socket matches the requested vault';
   while (Date.now() < deadline) {
-    try {
-      const response = await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(3000) });
-      if (!response.ok) throw new Error(`CDP discovery returned HTTP ${response.status}`);
-      const targets = await response.json();
-      for (const target of targets.filter(item => item.type === 'page' && item.webSocketDebuggerUrl)) {
-        const state = await evaluate(target.webSocketDebuggerUrl, probe);
+    let cliDisabled = false;
+    let matched = false;
+    for (const endpoint of endpoints) {
+      try {
+        const state = await evaluate(endpoint, vault, probe);
         if (!state) continue;
+        matched = true;
         if (state.restricted === !enabled && Object.values(state.plugins).every(version => enabled ? Boolean(version) : !version)) {
           console.log(JSON.stringify(state, null, 2));
           return;
         }
         lastError = `Vault is not ready: ${JSON.stringify(state)}`;
         if (!values.check && !reloaded) {
-          await evaluate(target.webSocketDebuggerUrl, `(() => {
+          await evaluate(endpoint, vault, `(() => {
             const state = ${probe};
             if (!state) throw new Error('Vault changed before activation');
             localStorage.setItem('enable-plugin-' + app.appId, ${JSON.stringify(storage['enable-plugin'])});
+            setTimeout(() => window.location.reload(), 100);
+            return true;
           })()`);
-          await request(target.webSocketDebuggerUrl, 'Page.reload');
           reloaded = true;
         }
+      } catch (error) {
+        lastError = error.message;
+        cliDisabled ||= lastError.startsWith('Command line interface is not enabled');
       }
-    } catch (error) {
-      lastError = error.message;
+    }
+    if (cliDisabled && !matched) {
+      throw new Error('Obsidian CLI is disabled. Apply profile.json to the stopped profile, then reopen Obsidian normally.');
     }
     await delay(250);
   }

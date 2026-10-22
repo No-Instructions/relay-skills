@@ -11,7 +11,10 @@ import tempfile
 import time
 
 
-def register(vault, profile):
+DEFAULTS = Path(__file__).resolve().parent.parent / "assets/defaults/profile.json"
+
+
+def register(vault, profile, defaults_file):
     vault = vault.expanduser().resolve()
     profile = profile.expanduser()
     if not vault.is_dir():
@@ -22,12 +25,17 @@ def register(vault, profile):
     data = json.loads(registry.read_text(encoding="utf-8")) if registry.exists() else {}
     if not isinstance(data, dict) or not isinstance(data.get("vaults", {}), dict):
         raise ValueError("Expected an Obsidian registry object with a vaults object")
+    defaults = json.loads(defaults_file.read_text(encoding="utf-8"))
+    if not isinstance(defaults, dict) or set(defaults) != {"cli"} or not isinstance(defaults["cli"], bool):
+        raise ValueError("Profile defaults must contain only a boolean cli setting")
+    settings_changed = any(data.get(key) != value for key, value in defaults.items())
+    data.update(defaults)
     entries = data.setdefault("vaults", {})
     for key, entry in entries.items():
         if not isinstance(entry, dict) or not isinstance(entry.get("path"), str):
             raise ValueError(f"Invalid vault registry entry: {key}")
     key = next((key for key, entry in entries.items() if Path(entry["path"]).resolve() == vault), None)
-    if key is not None and entries[key].get("open") is True:
+    if key is not None and entries[key].get("open") is True and not settings_changed:
         return key
     if key is None:
         key = secrets.token_hex(8)
@@ -58,9 +66,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--vault", required=True, type=Path)
     parser.add_argument("--profile", required=True, type=Path, help="Obsidian application data directory; app must be stopped")
+    parser.add_argument("--defaults-file", type=Path, default=DEFAULTS)
     args = parser.parse_args()
     try:
-        print(f"Vault id: {register(args.vault, args.profile)}")
+        print(f"Vault id: {register(args.vault, args.profile, args.defaults_file.expanduser())}")
     except (OSError, ValueError) as error:
         parser.exit(1, f"Error: {error}\n")
 
